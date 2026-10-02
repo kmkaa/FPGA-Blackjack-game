@@ -1,0 +1,240 @@
+`timescale 1ns/1ps
+
+module tb_fsm;
+    reg clk, reset, deal_pulse, hit_pulse, stand_pulse;
+    reg card_ready;
+    reg [4:0] player_total, dealer_total;
+    reg player_bust, dealer_bust;
+
+    wire draw_enable, turn_select;
+    wire [3:0] state_led;
+    wire result_player_win, result_dealer_win, result_push;
+
+    integer errors = 0;
+    integer checks = 0;
+
+    // internal state encodings, mirrored here for readable checks against
+    // the DUT's internal 'state' register (accessed hierarchically as
+    // dut.state -- a standard whitebox technique for FSM verification)
+    localparam IDLE        = 3'b000;
+    localparam DEAL_P1     = 3'b001;
+    localparam DEAL_D1     = 3'b010;
+    localparam DEAL_P2     = 3'b011;
+    localparam DEAL_D2     = 3'b100;
+    localparam PLAYER_TURN = 3'b101;
+    localparam DEALER_TURN = 3'b110;
+    localparam RESULT      = 3'b111;
+
+    blackjack_fsm dut (
+        .clk(clk),
+        .reset(reset),
+        .deal_pulse(deal_pulse),
+        .hit_pulse(hit_pulse),
+        .stand_pulse(stand_pulse),
+        .card_ready(card_ready),
+        .player_total(player_total),
+        .dealer_total(dealer_total),
+        .player_bust(player_bust),
+        .dealer_bust(dealer_bust),
+        .draw_enable(draw_enable),
+        .turn_select(turn_select),
+        .state_led(state_led),
+        .result_player_win(result_player_win),
+        .result_dealer_win(result_dealer_win),
+        .result_push(result_push)
+    );
+
+    initial begin
+        clk          = 0;
+        reset        = 1;
+        deal_pulse   = 0;
+        hit_pulse    = 0;
+        stand_pulse  = 0;
+        card_ready   = 0;
+        player_total = 5'd0;
+        dealer_total = 5'd0;
+        player_bust  = 1'b0;
+        dealer_bust  = 1'b0;
+        forever #10 clk = ~clk;
+    end
+
+    task check(input [319:0] name, input [31:0] actual, input [31:0] expected);
+        begin
+            checks = checks + 1;
+            if (actual !== expected) begin
+                errors = errors + 1;
+                $display("FAIL [%0s]: expected=%0d actual=%0d", name, expected, actual);
+            end else begin
+                $display("PASS [%0s]: value=%0d", name, actual);
+            end
+        end
+    endtask
+
+    task pulse_deal;
+        begin @(negedge clk); deal_pulse = 1; @(negedge clk); deal_pulse = 0; end
+    endtask
+
+    task pulse_hit;
+        begin @(negedge clk); hit_pulse = 1; @(negedge clk); hit_pulse = 0; end
+    endtask
+
+    task pulse_stand;
+        begin @(negedge clk); stand_pulse = 1; @(negedge clk); stand_pulse = 0; end
+    endtask
+
+    // Block until draw_enable is actually asserted, then deliver one
+    // card_ready pulse. This mimics realistic sequencing (a real card_draw
+    // module only ever asserts card_ready in response to draw_enable) and
+    // avoids hand-counting exact idle cycles, which would be fragile if
+    // the draw_request timing ever changes.
+    task do_one_draw;
+        begin
+            while (draw_enable !== 1'b1)
+                @(negedge clk);
+            card_ready = 1;
+            @(negedge clk);
+            card_ready = 0;
+            @(negedge clk);
+        end
+    endtask
+
+    // runs the full four-card opening deal: IDLE -> ... -> PLAYER_TURN
+    task deal_full_hand;
+        begin
+            pulse_deal;
+            do_one_draw;   // DEAL_P1 -> DEAL_D1
+            do_one_draw;   // DEAL_D1 -> DEAL_P2
+            do_one_draw;   // DEAL_P2 -> DEAL_D2
+            do_one_draw;   // DEAL_D2 -> PLAYER_TURN
+        end
+    endtask
+
+    task do_reset;
+        begin
+            reset        = 1;
+            deal_pulse   = 0;
+            hit_pulse    = 0;
+            stand_pulse  = 0;
+            card_ready   = 0;
+            player_total = 5'd0;
+            dealer_total = 5'd0;
+            player_bust  = 1'b0;
+            dealer_bust  = 1'b0;
+            @(negedge clk);
+            reset = 0;
+            @(negedge clk);
+        end
+    endtask
+
+    initial begin
+        @(negedge clk);
+        reset = 0;
+        @(negedge clk);
+
+        // ---- reset ----
+        check("state after reset", dut.state, IDLE);
+        check("draw_enable after reset", draw_enable, 0);
+
+        // ================================================================
+        // Opening deal sequence: verify routing (turn_select) and the
+        // handshake (draw_enable/card_ready) at each of the four deals.
+        // ================================================================
+        pulse_deal;
+        check("state after deal_pulse", dut.state, DEAL_P1);
+        check("turn_select routes to player in DEAL_P1", turn_select, 0);
+        do_one_draw;
+        check("state after 1st draw", dut.state, DEAL_D1);
+        check("turn_select routes to dealer in DEAL_D1", turn_select, 1);
+
+        do_one_draw;
+        check("state after 2nd draw", dut.state, DEAL_P2);
+        check("turn_select routes to player in DEAL_P2", turn_select, 0);
+
+        do_one_draw;
+        check("state after 3rd draw", dut.state, DEAL_D2);
+        check("turn_select routes to dealer in DEAL_D2", turn_select, 1);
+
+        do_one_draw;
+        check("state after 4th draw -> PLAYER_TURN", dut.state, PLAYER_TURN);
+        check("draw_enable idle once in PLAYER_TURN (no hit yet)", draw_enable, 0);
+
+        // ================================================================
+        // SCENARIO A -- normal hit, then normal stand, then dealer auto-draw
+        // ================================================================
+        player_total = 5'd15;   // pretend the deal left the player at 15
+        pulse_hit;
+        check("hit_pulse triggers draw_enable", draw_enable, 1);
+        check("turn_select routes hit to player", turn_select, 0);
+        do_one_draw;
+
+        check("still in PLAYER_TURN after a non-bust hit", dut.state, PLAYER_TURN);
+
+        pulse_stand;
+        check("stand_pulse moves to DEALER_TURN", dut.state, DEALER_TURN);
+        check("turn_select routes to dealer in DEALER_TURN", turn_select, 1);
+
+        // dealer auto-draw loop: keep "hitting" until dealer_total >= 17
+        dealer_total = 5'd12;
+        do_one_draw;
+        check("dealer auto-requests another draw below 17", dut.state, DEALER_TURN);
+
+        dealer_total = 5'd18;  // pretend that last draw brought it to 18
+        @(negedge clk);
+        check("dealer stands at 18, moves to RESULT", dut.state, RESULT);
+
+        // ---- RESULT comparison: player 15 vs dealer 18 -> dealer wins ----
+        check("dealer wins on higher total", result_dealer_win, 1'b1);
+        check("player does not win here", result_player_win, 1'b0);
+        check("not a push here", result_push, 1'b0);
+
+        // Result logic is purely combinational off state==RESULT -- we can
+        // change the totals directly, still sitting in RESULT, and check
+        // multiple outcomes without re-running the whole deal each time.
+        player_total = 5'd19;
+        @(negedge clk);
+        check("player wins on higher total", result_player_win, 1'b1);
+        check("dealer does not win here", result_dealer_win, 1'b0);
+
+        player_total = 5'd18;
+        @(negedge clk);
+        check("equal totals -> push", result_push, 1'b1);
+
+        dealer_bust = 1'b1;
+        @(negedge clk);
+        check("dealer bust -> player wins regardless of totals", result_player_win, 1'b1);
+        check("push clears once dealer busts", result_push, 1'b0);
+
+        // ================================================================
+        // SCENARIO B -- player busts mid-turn, dealer's turn is skipped
+        // ================================================================
+        do_reset;
+        deal_full_hand;
+        check("reached PLAYER_TURN (scenario B)", dut.state, PLAYER_TURN);
+
+        player_total = 5'd23;
+        player_bust  = 1'b1;
+        @(negedge clk);
+        check("player bust skips straight to RESULT", dut.state, RESULT);
+        check("dealer wins when player busts", result_dealer_win, 1'b1);
+
+        // ================================================================
+        // SCENARIO C -- auto-stand the instant player hits exactly 21
+        // ================================================================
+        do_reset;
+        deal_full_hand;
+        player_total = 5'd21;
+        player_bust  = 1'b0;
+        @(negedge clk);
+        check("auto-stand at 21 moves straight to DEALER_TURN", dut.state, DEALER_TURN);
+
+        // ---- summary ----
+        $display("--------------------------------------------------");
+        if (errors == 0)
+            $display("ALL %0d CHECKS PASSED", checks);
+        else
+            $display("%0d OF %0d CHECKS FAILED", errors, checks);
+        $display("--------------------------------------------------");
+
+        $finish;
+    end
+endmodule

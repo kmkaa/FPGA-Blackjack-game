@@ -1,0 +1,161 @@
+module blackjack_top (
+	input wire CLOCK_50,
+	input wire [3:0] KEY,
+	
+	output wire [9:0] LEDR,
+	output wire [6;0] HEX0,
+	output wire [6;0] HEX1,
+	output wire [6;0] HEX2,
+	output wire [6;0] HEX3,
+	output wire [6;0] HEX4,
+	output wire [6;0] HEX5
+);
+
+	wire reset = !KEY[0];
+	wire deal_btn = !KEY[1];
+	wire hit_btn = !KEY[2];
+	wire stand_btn = !KEY[3];
+	
+	reg [2:0] deal_sync, hit_sync, stand_sync;
+	
+	always @(posedge CLOCK_50) begin
+		if (reset) begin
+			deal_sync <= 3'b000;
+			hit_sync <= 3'b000;
+			stand_sync <= 3'b000;
+		end else begin
+			deal_sync <= {deal_sync[1:0], deal_btn};
+			hit_sync <= {hit_sync[1:0], hit_btn};
+			stand_sync <= {stand_sync[1:0], stand_btn};
+		end 
+	end
+	
+	wire deal_pulse = deal_sync[1] && !deal_sync[2];
+	wire hit_pulse = hit_sync[1] && !hit_sync[2];
+	wire stand_pulse = stand_sync[1] && !stand_sync[2];
+	
+	//call LFSR
+	wire [3:0] lfsr_out;
+	
+	lfsr u_lfsr (
+	.clk(CLOCK_50),
+	.reset(reset),
+	.lfsr_out(lfsr_out)
+	);
+
+	//call card draw
+	wire draw_enable;
+	wire [3:0] card_rank;
+	wire card_ready;
+	
+	card_draw u_card_draw(
+		.clk(CLOCK_50),
+		.reset(reset),
+		.lfsr_out(lfsr_out),
+		.draw_enable(draw_enable),
+		.card_rank(card_rank),
+		.card_ready(card_ready)
+	);
+	
+	//call card value
+	wire [4:0] raw_card_value;
+	wire is_ace;
+	
+	card_value u_card_value(
+		.card_rank(card_rank),
+		.value(raw_card_value),
+		.is_ace(is_ace)
+	);
+	
+	//call fsm
+	wire turn_select;
+	wire [4:0] player_total, dealer_total;
+	wire player_bust, dealer_bust;
+	wire result_player_win, result_dealer_win, result_push;
+	
+	blackjack_fsm u_fsm (
+		.clk(CLOCK_50),
+      .reset(reset),
+		.deal_pulse(deal_pulse),
+		.hit_pulse(hit_pulse),
+		.stand_pulse(stand_pulse),
+		.card_ready(card_ready),
+		.player_total(player_total),
+		.dealer_total(dealer_total),
+		.player_bust(player_bust),
+		.dealer_bust(dealer_bust),
+		.draw_enable(draw_enable),
+		.turn_select(turn_select),
+		.state_led(LEDR[3:0]),
+		.result_player_win(result_player_win),
+		.result_dealer_win(result_dealer_win),
+		.result_push(result_push)
+	);
+	
+	wire card_valid_player = card_ready && (turn_select == 1'b0);
+	wire card_valid_dealer = card_ready && (turn_select == 1'b1);
+	
+	//score calculators
+	hand_score u_player_score (
+		.clk(CLOCK_50),
+		.reset(reset || deal_pulse),
+		.value(raw_card_value),
+		.is_ace(is_ace),
+		.card_valid(card_valid_player),
+		.total(player_total),
+		.bust(player_bust)
+	);
+		hand_score u_dealer_score (
+		.clk(CLOCK_50),
+		.reset(reset || deal_pulse),
+		.value(raw_card_value),
+		.is_ace(is_ace),
+		.card_valid(card_valid_dealer),
+		.total(dealer_total),
+		.bust(dealer_bust)
+	);
+	
+	//assign LEDS
+	assign LEDR[7] = result_player_win;
+	assign LEDR[8] = result_dealer_win;
+	assign LEDR[9] = result_push;
+	
+	hex7seg seg_player_ones (.val(player_total % 10), .hex(HEX0));
+	hex7seg seg_player_tens (.val(player_total / 10), .hex(HEX1));
+	
+	hex7seg seg_dealer_ones (.val(dealer_total % 10), .hex(HEX2));
+	hex7seg seg_dealer_tens (.val(dealer_total / 10), .hex(HEX3));
+	
+	hex7seg seg_card_ones (.val(card_total % 10), .hex(HEX4));
+	hex7seg seg_card_tens (.val(card_total / 10), .hex(HEX5));
+endmodule
+
+ module hex7seg (
+	input wire [3;0] val,
+	output reg [6:0] hex
+);
+	always @(*) begin
+		case (val)
+			4'd0: hex = 7'b100_0000;
+			4'd1: hex = 7'b111_1001;
+			4'd2: hex = 7'b010_0100;
+			4'd3: hex = 7'b011_0000;
+			4'd4: hex = 7'b001_1001;
+			4'd5: hex = 7'b001_0010;
+			4'd6: hex = 7'b000_0010;
+			4'd7: hex = 7'b111_1000;
+			4'd8: hex = 7'b000_0000;
+			4'd9: hex = 7'b000_0010;
+			default: hex = 7'b111_1111;
+		endcase
+	end
+endmodule
+
+	
+		
+	
+		
+	
+		
+	
+	

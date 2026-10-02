@@ -1,0 +1,88 @@
+`timescale 1ns/1ps
+
+module tb_lfsr;
+	reg clk;
+	reg reset; 
+	wire [3:0] lfsr_out;
+
+	integer errors = 0;
+	integer checks = 0;
+	integer i;
+
+	reg [15:0] seen; //seen[N] = 1 once number has appeared
+	reg [3:0] first_val; //captured seed value
+	integer count; //manual counts
+
+lfsr dut(
+	.clk(clk),
+	.reset(reset),
+	. lfsr_out(lfsr_out)
+);
+
+
+initial begin
+        clk = 0;
+        forever #10 clk = ~clk;
+    end
+ 
+    task check(input [319:0] name, input [31:0] actual, input [31:0] expected);
+        begin
+            checks = checks + 1;
+            if (actual !== expected) begin
+                errors = errors + 1;
+                $display("FAIL [%0s]: expected=%0d actual=%0d", name, expected, actual);
+            end else begin
+                $display("PASS [%0s]: value=%0d", name, actual);
+            end
+        end
+    endtask
+ 
+    initial begin
+        seen = 16'b0;
+ 
+        // ---- reset ----
+        reset = 1;
+        @(negedge clk);
+        reset = 0;
+ 
+        first_val = lfsr_out;
+        check("seed is non-zero", (first_val != 4'b0000), 1'b1);
+        seen[first_val] = 1'b1;
+ 
+        // ---- walk through 15 shifts, recording every value seen ----
+        for (i = 0; i < 15; i = i + 1) begin
+            @(negedge clk);
+            $display("shift %0d: lfsr_out=%b (%0d)", i+1, lfsr_out, lfsr_out);
+ 
+            // value 0 must NEVER appear -- that's the dead/stuck state
+            check("never lands on 0", (lfsr_out != 4'b0000), 1'b1);
+ 
+            if (i < 14) begin
+                // shifts 1-14: should be new values we haven't seen yet
+                check("value not repeated early", seen[lfsr_out], 1'b0);
+                seen[lfsr_out] = 1'b1;
+            end else begin
+                // shift 15 (the 16th value overall, i==14): should be back to the seed
+                check("returns to seed after full cycle", lfsr_out, first_val);
+            end
+        end
+ 
+        // ---- coverage check: exactly 15 distinct non-zero values seen ----
+        check("bit 0 (value 0) never marked seen", seen[0], 1'b0);
+ 
+        count = 0;
+        for (i = 1; i <= 15; i = i + 1)
+            count = count + seen[i];
+        check("all 15 non-zero states covered", count, 15);
+ 
+        // ---- summary ----
+        $display("--------------------------------------------------");
+        if (errors == 0)
+            $display("ALL %0d CHECKS PASSED", checks);
+        else
+            $display("%0d OF %0d CHECKS FAILED", errors, checks);
+        $display("--------------------------------------------------");
+ 
+        $finish;
+    end
+endmodule

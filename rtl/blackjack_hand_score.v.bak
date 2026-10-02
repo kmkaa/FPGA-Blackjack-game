@@ -1,0 +1,50 @@
+module hand_score (
+	input wire clk,
+	input wire reset,
+	input wire [4:0] value,
+	input wire is_ace,
+	input wire card_valid,
+	output reg [4:0] total,
+	output reg bust
+);
+	reg [2:0] soft_aces; //no. of aces counted as 11
+	
+//combinatioanl logic same cycle, add/hold card, correct second aces, safety margin or 3 aces in a row
+	reg [5:0] sum0, sum1, sum2, sum3;
+	reg [2:0] soft0, soft1, soft2, soft3;
+	
+	always @(*) begin
+		sum0 = total + (card_valid ? value : 5'd0); 
+		soft0 = soft_aces + ((card_valid && is_ace) ? 3'd1 : 3'd0);
+		
+		if (sum0 > 6'd21 && soft0 > 3'd0) begin
+			sum1 = sum0 - 6'd10;
+			soft1 = soft0 - 3'd1;
+		end 
+		else begin
+			sum1 = sum0;
+			soft1 = soft0;
+		end
+		
+		if (sum1 > 6'd21 && soft1 > 3'd0) begin
+			sum2 = sum1 - 6'd10;
+			soft2 = soft1 - 3'd1;
+		end 
+		else begin
+			sum2 = sum1;
+			soft2 = soft1;
+		end
+		
+		if (sum2 > 6'd21 && soft2 > 3'd0) begin
+			sum3 = sum2 - 6'd10;
+			soft3 = soft2 - 3'd1;
+		end 
+		else begin
+			sum3 = sum2;
+			soft3 = soft2;
+		end
+	end
+	
+	
+	
+	

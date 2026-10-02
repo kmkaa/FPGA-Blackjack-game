@@ -1,0 +1,27 @@
+module card_draw (
+	input wire clk,
+	input wire reset,
+	input wire [3:0] lfsr_out,
+	input wire draw_enable,
+	output reg [3:0] card_rank,
+	output reg card_ready
+);
+
+//sequential block
+always @(posedge clk) begin
+		if (reset) begin
+			card_rank <= 4'd0;
+			card_ready <= 1'b0;
+		end
+		else if (draw_enable && lfsr_out >= 4'd1 && lfsr_out <= 4'd13) begin
+			card_rank <= lfsr_out;
+			card_ready <= 1'b1;
+		end
+		else begin
+			card_ready <= 1'b0;
+		end
+	end
+endmodule
+
+	
+	

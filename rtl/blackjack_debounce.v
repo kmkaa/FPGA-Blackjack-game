@@ -1,0 +1,54 @@
+module debounce #(parameter DEBOUNCE_BITS = 20)(
+	input wire clk,
+	input wire reset,
+	input wire btn_raw,
+	output reg pulse
+);
+	reg sync0, sync1;
+	reg stable, stable_prev;
+	reg [DEBOUNCE_BITS-1:0] counter;
+	
+	always @(posedge clk) begin
+		if (reset) begin
+			sync0 <= 1'b0;
+			sync1 <= 1'b0;
+		end else begin
+			sync0 <= btn_raw;
+			sync1 <= sync0;
+		end
+	end
+	
+	always @(posedge clk) begin
+		if (reset) begin
+			counter <= {DEBOUNCE_BITS{1'b0}};
+			stable <= 1'b0;
+		end
+		else if (sync1 != stable) begin
+			if (counter == {DEBOUNCE_BITS{1'b1}}) begin
+				stable <= sync1;
+				counter <= {DEBOUNCE_BITS{1'b0}};
+			end
+			else begin
+				counter <= counter + 1'b1;
+			end
+		end
+		else begin
+			counter <= {DEBOUNCE_BITS{1'b0}};
+		end
+	end
+	
+	always @(posedge clk) begin
+		if (reset) begin
+			stable_prev <= 1'b0;
+			pulse <= 1'b0;
+		end
+		else begin
+			stable_prev <= stable;
+			pulse <= stable && !stable_prev;
+		end
+	end
+endmodule
+
+			
+			
+	

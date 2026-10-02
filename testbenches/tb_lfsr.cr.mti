@@ -1,0 +1,73 @@
+{C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_hand_score.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_hand_score.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module tb_hand_score
+
+Top level modules:
+	tb_hand_score
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_card_value.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_card_value.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module card_value
+
+Top level modules:
+	card_value
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_hand_score.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_hand_score.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module hand_score
+
+Top level modules:
+	hand_score
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_fsm.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_fsm.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module tb_blackjack_fsm
+
+Top level modules:
+	tb_blackjack_fsm
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_fsm.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_fsm.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module blackjack_fsm
+
+Top level modules:
+	blackjack_fsm
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_card_draw.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_card_draw.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module card_draw
+
+Top level modules:
+	card_draw
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_card_draw.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_card_draw.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module tb_card_draw
+
+Top level modules:
+	tb_card_draw
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_lfsr.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/blackjack_lfsr.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module lfsr
+
+Top level modules:
+	lfsr
+
+} {} {}} {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.v} {1 {vlog -work work -vopt -stats=none {C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.v}
+Questa Altera Starter FPGA Edition-64 vlog 2025.2 Compiler 2025.05 May 31 2025
+** Note: (vlog-220) 'C:/Users/AK/Desktop/Uni stuff/side projs/blackjack/tb_lfsr.mpf' is used as the ini file.
+-- Compiling module tb_lfsr
+
+Top level modules:
+	tb_lfsr
+
+} {} {}}
