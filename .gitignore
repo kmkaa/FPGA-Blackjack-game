@@ -1,0 +1,17 @@
+# Quartus compilation output and database folders
+db/
+incremental_db/
+output_files/
+hps_isw_handshake/
+*.qws
+*.rpt
+*.summary
+*.sof
+*.pof
+*.smsg
+
+# ModelSim / QuestaSim work directories and artifacts
+work/
+transcript
+*.wlf
+*.mti
